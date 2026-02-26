@@ -11,6 +11,9 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PDFMake library for robust, data-driven vector PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -25,10 +28,14 @@
         </div>
         <div class="header-actions">
             <!-- Hidden on mobile, shown on desktop -->
-            <button class="btn btn-ghost" onclick="resetData()">
-                <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i> تهيئة جديدة
+            <button class="btn btn-ghost" onclick="confirmClearDataModal()"
+                style="color: #ef4444; background: rgba(239, 68, 68, 0.1);">
+                <i data-lucide="trash-2" style="width:16px;height:16px;"></i> إفراغ الحقول
             </button>
-            <button class="btn btn-primary" id="download-btn-desktop">
+            <button class="btn btn-ghost" onclick="resetData()">
+                <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i> ملء تجريبي
+            </button>
+            <button class="btn btn-primary" id="download-btn-desktop" onclick="downloadPDF(event)">
                 <i data-lucide="download" style="width:16px;height:16px;"></i> تحميل الـ PDF
             </button>
         </div>
@@ -74,17 +81,17 @@
                     <div class="form-group col-span-2">
                         <label class="form-label">الاسم الكامل (الإنجليزي أفضل)</label>
                         <input type="text" class="form-input" id="in-name" style="direction: ltr;"
-                            oninput="saveAndRefresh()">
+                            placeholder="مثال: Sultan AlFifi" oninput="saveAndRefresh()">
                     </div>
                     <div class="form-group">
                         <label class="form-label">البريد الإلكتروني</label>
                         <input type="email" class="form-input" id="in-email" style="direction: ltr;"
-                            oninput="saveAndRefresh()">
+                            placeholder="مثال: sultan@example.com" oninput="saveAndRefresh()">
                     </div>
                     <div class="form-group">
                         <label class="form-label">رقم الجوال</label>
                         <input type="text" class="form-input" id="in-phone" style="direction: ltr;"
-                            oninput="saveAndRefresh()">
+                            placeholder="مثال: +966 50 123 4567" oninput="saveAndRefresh()">
                     </div>
                     <div class="form-group" style="position: relative;">
                         <label class="form-label">
@@ -103,7 +110,7 @@
                     <div class="form-group">
                         <label class="form-label">المدينة، الدولة</label>
                         <input type="text" class="form-input" id="in-location" style="direction: ltr;"
-                            placeholder="Riyadh, KSA" oninput="saveAndRefresh()">
+                            placeholder="مثال: Makkah, KSA" oninput="saveAndRefresh()">
                     </div>
                 </div>
             </div>
@@ -216,12 +223,46 @@
         </button>
     </div>
 
+    <!-- Reset / Dummy Data Modal -->
+    <div class="custom-modal-overlay" id="resetModal">
+        <div class="custom-modal-box">
+            <h3>تعبئة ببيانات تجريبية؟</h3>
+            <p>هل تريد تعبئة الحقول ببيانات افتراضية للتجربة؟ سيتم مسح أي بيانات كتبتها حالياً، تذكر تحميل نسخة PDF قبل
+                ذلك.</p>
+            <div class="custom-modal-actions">
+                <button class="btn-close-modal"
+                    style="background:#f1f5f9; padding:0.6rem 1.2rem; border-radius:8px; cursor:pointer;"
+                    onclick="closeResetModal()">إلغاء</button>
+                <button class="btn-danger"
+                    style="background:#3b82f6; color:white; border:none; padding:0.6rem 1.2rem; border-radius:8px; font-weight:bold; cursor:pointer;"
+                    onclick="confirmReset()">تعبئة الحقول</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear All Modal -->
+    <div class="custom-modal-overlay" id="clearModal">
+        <div class="custom-modal-box">
+            <h3 style="color: #ef4444;">حذف جميع البيانات؟</h3>
+            <p>هل أنت متأكد من مسح جميع بيانات السيرة الذاتية لتصبح الحقول فارغة تماماً؟ لا يمكن التراجع عن هذا الإجراء.
+            </p>
+            <div class="custom-modal-actions">
+                <button class="btn-close-modal"
+                    style="background:#f1f5f9; padding:0.6rem 1.2rem; border-radius:8px; cursor:pointer;"
+                    onclick="closeClearModal()">إلغاء</button>
+                <button class="btn-danger"
+                    style="background:#ef4444; color:white; border:none; padding:0.6rem 1.2rem; border-radius:8px; font-weight:bold; cursor:pointer;"
+                    onclick="confirmClearAll()">مسح البيانات</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Mobile PDF Modal -->
     <div class="preview-modal" id="mobilePreviewModal">
         <div class="modal-header">
             <button class="btn-close-modal" onclick="toggleMobileModal()">إلغاء</button>
             <span>المعاينة النهائية</span>
-            <button class="btn-download-modal" onclick="downloadPDF()"><i data-lucide="download"
+            <button class="btn-download-modal" onclick="downloadPDF(event)"><i data-lucide="download"
                     style="width:16px;"></i> تحميل</button>
         </div>
         <div class="preview-modal-content" id="mobile-preview-container">
