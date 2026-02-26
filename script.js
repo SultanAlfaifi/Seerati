@@ -398,7 +398,9 @@ function confirmReset() {
         volunteering: [{ id: 105, role: "Mentor & Tech Support", date: "Ramadan 2019", org: "Grand Mosque Visitors Care", location: "Makkah, KSA", items: "Assisted elderly pilgrims with digital apps and wayfinding." }]
     };
     localStorage.setItem(LOCAL_KEY, JSON.stringify(dummyData));
-    location.reload();
+    loadProgress();
+    renderAll(true);
+    closeResetModal();
 }
 
 // Clear all data (make empty)
@@ -410,7 +412,13 @@ function closeClearModal() {
 }
 function confirmClearAll() {
     localStorage.removeItem(LOCAL_KEY);
-    location.reload();
+    resumeData = {
+        personal: { name: "", phone: "", email: "", social: "", location: "" },
+        skills: [], projects: [], experience: [], education: [], certifications: [], awards: [], volunteering: []
+    };
+    updateInputFields();
+    renderAll(true);
+    closeClearModal();
 }
 
 /* PDF Generate */
