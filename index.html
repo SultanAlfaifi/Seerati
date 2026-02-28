@@ -5,21 +5,26 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com; connect-src 'self' https://cdnjs.cloudflare.com https://unpkg.com;">
     <title>سيرتي | صانع السيرة الذاتية الاحترافي</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+    <script src="https://unpkg.com/lucide@0.475.0" crossorigin="anonymous"></script>
     <!-- PDFMake library for robust, data-driven vector PDF generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js" crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+    <script src="vfs_fonts.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div class="top-announcement">
-        صُنع بشغف بواسطة <a href="https://www.linkedin.com/in/alfaifi-sultan/" target="_blank">سلطان الفيفي</a>
+        صُنع بشغف بواسطة <a href="https://www.linkedin.com/in/alfaifi-sultan/" target="_blank"
+            rel="noopener noreferrer">سلطان الفيفي</a>
     </div>
     <header class="header">
         <div class="brand">
@@ -28,6 +33,9 @@
         </div>
         <div class="header-actions">
             <!-- Action buttons always shown, text hidden on mobile -->
+            <button class="btn btn-ghost" onclick="toggleMobileModal()" id="preview-btn-mobile">
+                <i data-lucide="eye" style="width:16px;height:16px;"></i> <span class="action-text">المعاينة</span>
+            </button>
             <button class="btn btn-ghost" onclick="confirmClearDataModal()"
                 style="color: #ef4444; background: rgba(239, 68, 68, 0.1);">
                 <i data-lucide="trash-2" style="width:16px;height:16px;"></i> <span class="action-text">إفراغ
@@ -73,6 +81,11 @@
             </div>
         </nav>
 
+        <div class="security-badge">
+            <i data-lucide="shield-check" style="width:14px;height:14px;"></i>
+            بياناتك تُحفظ محليًا كلياً
+        </div>
+
         <main class="editor" id="main-editor">
             <!-- SECTION 1: Personal -->
             <div class="section-wrapper active" id="sec-1">
@@ -102,10 +115,11 @@
                                 على الرابط بذكاء 🤖)</span>
                         </label>
                         <div style="position: relative; display: flex; align-items: center;">
-                            <input type="text" class="form-input" id="in-social" style="direction: ltr;"
-                                placeholder="https://linkedin.com/..." oninput="handleSocialInput(this.value)">
+                            <input type="text" class="form-input" id="in-social"
+                                style="direction: ltr; padding-left: 38px;" placeholder="https://linkedin.com/..."
+                                oninput="handleSocialInput(this.value)">
                             <div id="social-icon-box"
-                                style="position: absolute; right: auto; left: 12px; font-size: 1.25rem;">
+                                style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1.25rem; display: flex; align-items: center; justify-content: center; width: 20px;">
                                 <i class="fas fa-link" style="color:var(--text-muted); opacity:0.5;"></i>
                             </div>
                         </div>
@@ -219,12 +233,7 @@
         <aside class="preview-panel" id="desktop-preview-container"></aside>
     </div>
 
-    <!-- Mobile Floating Action Button -->
-    <div class="mobile-action-bar">
-        <button class="btn-mobile-preview" onclick="toggleMobileModal()">
-            <i data-lucide="file-text"></i>
-        </button>
-    </div>
+
 
     <!-- Reset / Dummy Data Modal -->
     <div class="custom-modal-overlay" id="resetModal">
@@ -233,12 +242,8 @@
             <p>هل تريد تعبئة الحقول ببيانات افتراضية للتجربة؟ سيتم مسح أي بيانات كتبتها حالياً، تذكر تحميل نسخة PDF قبل
                 ذلك.</p>
             <div class="custom-modal-actions">
-                <button class="btn-close-modal"
-                    style="background:#f1f5f9; padding:0.6rem 1.2rem; border-radius:8px; cursor:pointer;"
-                    onclick="closeResetModal()">إلغاء</button>
-                <button class="btn-danger"
-                    style="background:#3b82f6; color:white; border:none; padding:0.6rem 1.2rem; border-radius:8px; font-weight:bold; cursor:pointer;"
-                    onclick="confirmReset()">تعبئة الحقول</button>
+                <button class="btn-close-modal" onclick="closeResetModal()">إلغاء</button>
+                <button class="btn-confirm-reset" onclick="confirmReset()">تعبئة الحقول</button>
             </div>
         </div>
     </div>
@@ -250,12 +255,8 @@
             <p>هل أنت متأكد من مسح جميع بيانات السيرة الذاتية لتصبح الحقول فارغة تماماً؟ لا يمكن التراجع عن هذا الإجراء.
             </p>
             <div class="custom-modal-actions">
-                <button class="btn-close-modal"
-                    style="background:#f1f5f9; padding:0.6rem 1.2rem; border-radius:8px; cursor:pointer;"
-                    onclick="closeClearModal()">إلغاء</button>
-                <button class="btn-danger"
-                    style="background:#ef4444; color:white; border:none; padding:0.6rem 1.2rem; border-radius:8px; font-weight:bold; cursor:pointer;"
-                    onclick="confirmClearAll()">مسح البيانات</button>
+                <button class="btn-close-modal" onclick="closeClearModal()">إلغاء</button>
+                <button class="btn-danger-confirm" onclick="confirmClearAll()">مسح البيانات</button>
             </div>
         </div>
     </div>

@@ -19,12 +19,14 @@ let resumeData = {
 
 window.onload = () => {
     const template = document.getElementById('pdf-root');
-    document.getElementById('desktop-preview-container').appendChild(template);
+    const container = document.getElementById('desktop-preview-container');
+    if (template && container) container.appendChild(template);
 
     loadProgress();
     renderAll();
     lucide.createIcons();
     handleSocialInput(resumeData.personal.social || "");
+    updateProgressiveForms();
 };
 
 /* --- NAVIGATION --- */
@@ -70,13 +72,13 @@ function handleSocialInput(val) {
     let iconClass = "fas fa-link";
     const low = (val || "").toLowerCase();
 
-    if (low.includes('linkedin.com')) iconClass = "fab fa-linkedin color-linkedin";
-    else if (low.includes('github.com')) iconClass = "fab fa-github color-github";
-    else if (low.includes('twitter.com') || low.includes('x.com')) iconClass = "fab fa-x-twitter-alt color-x";
-    else if (low.includes('behance.net')) iconClass = "fab fa-behance color-behance";
-    else if (low.includes('dribbble.com')) iconClass = "fab fa-dribbble color-dribbble";
-    else if (low.includes('vimeo.com')) iconClass = "fab fa-vimeo color-vimeo";
-    else if (low.includes('youtube.com')) iconClass = "fab fa-youtube color-youtube";
+    if (low.includes('linkedin.com')) iconClass = "fa-brands fa-linkedin color-linkedin";
+    else if (low.includes('github.com')) iconClass = "fa-brands fa-github color-github";
+    else if (low.includes('twitter.com') || low.includes('x.com')) iconClass = "fa-brands fa-x-twitter color-x";
+    else if (low.includes('behance.net')) iconClass = "fa-brands fa-behance color-behance";
+    else if (low.includes('dribbble.com')) iconClass = "fa-brands fa-dribbble color-dribbble";
+    else if (low.includes('vimeo.com')) iconClass = "fa-brands fa-vimeo color-vimeo";
+    else if (low.includes('youtube.com')) iconClass = "fa-brands fa-youtube color-youtube";
 
     iconBox.innerHTML = `<i class="${iconClass}" style="opacity:1;"></i>`;
 
@@ -121,10 +123,31 @@ function renderAll(buildEdit = true) {
     renderCertifications(buildEdit);
     renderAwards(buildEdit);
     renderVolunteering(buildEdit);
+
+    // Call lucide to render trash icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // Process progressive disclosure for the new items
+    if (buildEdit) {
+        updateProgressiveForms();
+    }
+}
+
+function escapeHTML(str) {
+    if (str === null || str === undefined) return "";
+    return String(str).replace(/[&<>"']/g, (m) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    }[m]));
 }
 
 function formatBold(txt) {
-    return txt.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    return escapeHTML(txt).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 }
 
 /* RENDERING BLOCKS */
@@ -133,6 +156,7 @@ function renderPersonal() {
     document.getElementById('cv-name').textContent = p.name || "";
     document.getElementById('cv-phone').textContent = p.phone || "";
     document.getElementById('cv-email').textContent = p.email || "";
+    // Note: p.social and p.location are handled below securely.
     document.getElementById('cv-location').textContent = p.location || "";
 
     const hp = !!p.phone, he = !!p.email, hs = !!p.social, hl = !!p.location;
@@ -162,12 +186,12 @@ function renderSkills(buildEdit = true) {
             const card = document.createElement('div'); card.className = 'item-card';
             card.innerHTML = `<button class="btn-delete" onclick="removeItem('skills', ${sk.id})" title="حذف الفئة"><i data-lucide="trash-2" style="width:18px;"></i></button>
                 <div class="form-grid">
-                    <div class="form-group"><label class="form-label">عنوان الفئة</label><input type="text" style="direction:ltr;" class="form-input" value="${sk.category}" oninput="updateItem('skills', ${sk.id}, 'category', this.value)" placeholder="Category Name"></div>
-                    <div class="form-group col-span-2"><label class="form-label">محتوى الفئة (افصل بفاصلة)</label><textarea style="direction:ltr;" class="form-input form-textarea" style="min-height: 60px;" oninput="updateItem('skills', ${sk.id}, 'items', this.value)" placeholder="JavaScript, Python, SQL...">${sk.items}</textarea></div>
+                    <div class="form-group"><label class="form-label">عنوان الفئة</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(sk.category)}" oninput="updateItem('skills', ${sk.id}, 'category', this.value)" placeholder="Category Name"></div>
+                    <div class="form-group col-span-2"><label class="form-label">محتوى الفئة (افصل بفاصلة)</label><textarea style="direction:ltr;" class="form-input form-textarea" style="min-height: 60px;" oninput="updateItem('skills', ${sk.id}, 'items', this.value)" placeholder="JavaScript, Python, SQL...">${escapeHTML(sk.items)}</textarea></div>
                 </div>`;
             editList.appendChild(card);
         }
-        if (sk.category || sk.items) viewList.innerHTML += `<div style="font-size:9.5pt;margin-bottom:4px;"><strong>${sk.category ? sk.category + ":" : ""}</strong> ${sk.items}</div>`;
+        if (sk.category || sk.items) viewList.innerHTML += `<div style="font-size:9.5pt;margin-bottom:4px;"><strong>${sk.category ? escapeHTML(sk.category) + ":" : ""}</strong> ${escapeHTML(sk.items)}</div>`;
     });
 }
 
@@ -195,14 +219,14 @@ function renderProjects(buildEdit = true) {
             const card = document.createElement('div'); card.className = 'item-card';
             card.innerHTML = `<button class="btn-delete" onclick="removeItem('projects', ${p.id})"><i data-lucide="trash-2" style="width:18px;"></i></button>
                 <div class="form-grid">
-                    <div class="form-group"><label class="form-label">المشروع</label><input type="text" style="direction:ltr;" class="form-input" value="${p.name}" oninput="updateItem('projects', ${p.id}, 'name', this.value)"></div>
-                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('projects', ${p.id}, 'date')"><span style="direction:ltr; display:inline-block">${p.date || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
-                    <div class="form-group col-span-2"><label class="form-label">التفاصيل (كل سطر نقطة)</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('projects', ${p.id}, 'items', this.value)">${p.items}</textarea></div>
+                    <div class="form-group"><label class="form-label">المشروع</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(p.name)}" oninput="updateItem('projects', ${p.id}, 'name', this.value)" placeholder="مثال: Hajj & Umrah Guide App"></div>
+                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('projects', ${p.id}, 'date')"><span style="direction:ltr; display:inline-block">${escapeHTML(p.date) || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
+                    <div class="form-group col-span-2"><label class="form-label">التفاصيل (كل سطر نقطة)</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('projects', ${p.id}, 'items', this.value)" placeholder="Built a cross-platform mobile application...\nIntegrated live maps for accessibility.">${escapeHTML(p.items)}</textarea></div>
                 </div>`;
             editList.appendChild(card);
         }
         const item = document.createElement('div'); item.className = "cv-item";
-        item.innerHTML = `<div class="cv-row-1"><span><strong>${p.name}</strong></span><span class="cv-date">${p.date}</span></div>${buildBulletPoints(p.items)}`;
+        item.innerHTML = `<div class="cv-row-1"><span><strong>${escapeHTML(p.name)}</strong></span><span class="cv-date">${escapeHTML(p.date)}</span></div>${buildBulletPoints(p.items)}`;
         viewList.appendChild(item);
     });
 }
@@ -219,16 +243,16 @@ function renderExperience(buildEdit = true) {
             const card = document.createElement('div'); card.className = 'item-card';
             card.innerHTML = `<button class="btn-delete" onclick="removeItem('experience', ${exp.id})"><i data-lucide="trash-2" style="width:18px;"></i></button>
                 <div class="form-grid">
-                    <div class="form-group"><label class="form-label">الشركة (Company)</label><input type="text" style="direction:ltr;" class="form-input" value="${exp.company}" oninput="updateItem('experience', ${exp.id}, 'company', this.value)"></div>
-                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('experience', ${exp.id}, 'date')"><span style="direction:ltr; display:inline-block">${exp.date || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
-                    <div class="form-group"><label class="form-label">المسمى (Role)</label><input type="text" style="direction:ltr;" class="form-input" value="${exp.role}" oninput="updateItem('experience', ${exp.id}, 'role', this.value)"></div>
-                    <div class="form-group"><label class="form-label">المنطقة (Location)</label><input type="text" style="direction:ltr;" class="form-input" value="${exp.location}" oninput="updateItem('experience', ${exp.id}, 'location', this.value)"></div>
-                    <div class="form-group col-span-2"><label class="form-label">المهام والانجازات</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('experience', ${exp.id}, 'items', this.value)">${exp.items}</textarea></div>
+                    <div class="form-group"><label class="form-label">الشركة (Company)</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(exp.company)}" oninput="updateItem('experience', ${exp.id}, 'company', this.value)" placeholder="مثال: Google"></div>
+                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('experience', ${exp.id}, 'date')"><span style="direction:ltr; display:inline-block">${escapeHTML(exp.date) || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
+                    <div class="form-group"><label class="form-label">المسمى (Role)</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(exp.role)}" oninput="updateItem('experience', ${exp.id}, 'role', this.value)" placeholder="مثال: Software Engineer"></div>
+                    <div class="form-group"><label class="form-label">المنطقة (Location)</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(exp.location)}" oninput="updateItem('experience', ${exp.id}, 'location', this.value)" placeholder="مثال: Mountain View, USA"></div>
+                    <div class="form-group col-span-2"><label class="form-label">المهام والانجازات</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('experience', ${exp.id}, 'items', this.value)" placeholder="Developed scalable web applications...\nOptimized database queries.">${escapeHTML(exp.items)}</textarea></div>
                 </div>`;
             editList.appendChild(card);
         }
         const item = document.createElement('div'); item.className = "cv-item";
-        item.innerHTML = `<div class="cv-row-1"><span>${exp.company}</span><span class="cv-date">${exp.date}</span></div><div class="cv-row-2"><span class="cv-role">${exp.role}</span><span>${exp.location}</span></div>${buildBulletPoints(exp.items)}`;
+        item.innerHTML = `<div class="cv-row-1"><span>${escapeHTML(exp.company)}</span><span class="cv-date">${escapeHTML(exp.date)}</span></div><div class="cv-row-2"><span class="cv-role">${escapeHTML(exp.role)}</span><span>${escapeHTML(exp.location)}</span></div>${buildBulletPoints(exp.items)}`;
         viewList.appendChild(item);
     });
 }
@@ -245,16 +269,16 @@ function renderEducation(buildEdit = true) {
             const card = document.createElement('div'); card.className = 'item-card';
             card.innerHTML = `<button class="btn-delete" onclick="removeItem('education', ${e.id})"><i data-lucide="trash-2" style="width:18px;"></i></button>
                 <div class="form-grid">
-                    <div class="form-group"><label class="form-label">المؤسسة / الجامعة</label><input type="text" style="direction:ltr;" class="form-input" value="${e.school}" oninput="updateItem('education', ${e.id}, 'school', this.value)"></div>
-                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('education', ${e.id}, 'date')"><span style="direction:ltr; display:inline-block">${e.date || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
-                    <div class="form-group"><label class="form-label">الدرجة (Degree)</label><input type="text" style="direction:ltr;" class="form-input" value="${e.degree}" oninput="updateItem('education', ${e.id}, 'degree', this.value)"></div>
-                    <div class="form-group"><label class="form-label">المدينة</label><input type="text" style="direction:ltr;" class="form-input" value="${e.location}" oninput="updateItem('education', ${e.id}, 'location', this.value)"></div>
-                    <div class="form-group col-span-2"><label class="form-label">التفاصيل المؤهل (كالمعدل)</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('education', ${e.id}, 'items', this.value)">${e.items}</textarea></div>
+                    <div class="form-group"><label class="form-label">المؤسسة / الجامعة</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(e.school)}" oninput="updateItem('education', ${e.id}, 'school', this.value)" placeholder="مثال: King Saud University"></div>
+                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('education', ${e.id}, 'date')"><span style="direction:ltr; display:inline-block">${escapeHTML(e.date) || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
+                    <div class="form-group"><label class="form-label">الدرجة (Degree)</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(e.degree)}" oninput="updateItem('education', ${e.id}, 'degree', this.value)" placeholder="مثال: Bachelor of Computer Science"></div>
+                    <div class="form-group"><label class="form-label">المدينة</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(e.location)}" oninput="updateItem('education', ${e.id}, 'location', this.value)" placeholder="مثال: Riyadh, KSA"></div>
+                    <div class="form-group col-span-2"><label class="form-label">التفاصيل المؤهل (كالمعدل)</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('education', ${e.id}, 'items', this.value)" placeholder="GPA: 4.5/5.0\nCompleted coursework in Data Structures.">${escapeHTML(e.items)}</textarea></div>
                 </div>`;
             editList.appendChild(card);
         }
         const item = document.createElement('div'); item.className = "cv-item";
-        item.innerHTML = `<div class="cv-row-1"><span>${e.school}</span><span class="cv-date">${e.date}</span></div><div class="cv-row-2"><span class="cv-role">${e.degree}</span><span>${e.location}</span></div>${buildBulletPoints(e.items)}`;
+        item.innerHTML = `<div class="cv-row-1"><span>${escapeHTML(e.school)}</span><span class="cv-date">${escapeHTML(e.date)}</span></div><div class="cv-row-2"><span class="cv-role">${escapeHTML(e.degree)}</span><span>${escapeHTML(e.location)}</span></div>${buildBulletPoints(e.items)}`;
         viewList.appendChild(item);
     });
 }
@@ -271,16 +295,16 @@ function renderCertifications(buildEdit = true) {
             const card = document.createElement('div'); card.className = 'item-card';
             card.innerHTML = `<button class="btn-delete" onclick="removeItem('certifications', ${cert.id})"><i data-lucide="trash-2" style="width:18px;"></i></button>
                 <div class="form-grid">
-                    <div class="form-group col-span-2"><label class="form-label">اسم الشهادة (Certificate Name)</label><input type="text" style="direction:ltr;" class="form-input" value="${cert.name}" oninput="updateItem('certifications', ${cert.id}, 'name', this.value)"></div>
-                    <div class="form-group"><label class="form-label">جهة الإصدار (Issuer)</label><input type="text" style="direction:ltr;" class="form-input" value="${cert.issuer}" oninput="updateItem('certifications', ${cert.id}, 'issuer', this.value)"></div>
-                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('certifications', ${cert.id}, 'date')"><span style="direction:ltr; display:inline-block">${cert.date || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
-                    <div class="form-group col-span-2"><label class="form-label">تفاصيل إضافية (اختياري)</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('certifications', ${cert.id}, 'items', this.value)">${cert.items}</textarea></div>
+                    <div class="form-group col-span-2"><label class="form-label">اسم الشهادة (Certificate Name)</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(cert.name)}" oninput="updateItem('certifications', ${cert.id}, 'name', this.value)" placeholder="مثال: CompTIA A+ Certification"></div>
+                    <div class="form-group"><label class="form-label">جهة الإصدار (Issuer)</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(cert.issuer)}" oninput="updateItem('certifications', ${cert.id}, 'issuer', this.value)" placeholder="مثال: CompTIA"></div>
+                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('certifications', ${cert.id}, 'date')"><span style="direction:ltr; display:inline-block">${escapeHTML(cert.date) || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
+                    <div class="form-group col-span-2"><label class="form-label">تفاصيل إضافية (اختياري)</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('certifications', ${cert.id}, 'items', this.value)" placeholder="Additional details about the certification...">${escapeHTML(cert.items)}</textarea></div>
                 </div>`;
             editList.appendChild(card);
         }
         const item = document.createElement('div'); item.className = "cv-item";
-        let titleLine = `<div class="cv-row-1"><span>${cert.name}</span><span class="cv-date">${cert.date}</span></div>`;
-        if (cert.issuer) titleLine += `<div class="cv-row-2"><span class="cv-role">${cert.issuer}</span></div>`;
+        let titleLine = `<div class="cv-row-1"><span>${escapeHTML(cert.name)}</span><span class="cv-date">${escapeHTML(cert.date)}</span></div>`;
+        if (cert.issuer) titleLine += `<div class="cv-row-2"><span class="cv-role">${escapeHTML(cert.issuer)}</span></div>`;
         item.innerHTML = titleLine + buildBulletPoints(cert.items);
         viewList.appendChild(item);
     });
@@ -298,14 +322,14 @@ function renderAwards(buildEdit = true) {
             const card = document.createElement('div'); card.className = 'item-card';
             card.innerHTML = `<button class="btn-delete" onclick="removeItem('awards', ${aw.id})"><i data-lucide="trash-2" style="width:18px;"></i></button>
                 <div class="form-grid">
-                    <div class="form-group"><label class="form-label">عنوان الجائزة</label><input type="text" style="direction:ltr;" class="form-input" value="${aw.name}" oninput="updateItem('awards', ${aw.id}, 'name', this.value)"></div>
-                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('awards', ${aw.id}, 'date')"><span style="direction:ltr; display:inline-block">${aw.date || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
-                    <div class="form-group col-span-2"><label class="form-label">التفاصيل أو الإنجاز</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('awards', ${aw.id}, 'items', this.value)">${aw.items}</textarea></div>
+                    <div class="form-group"><label class="form-label">عنوان الجائزة</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(aw.name)}" oninput="updateItem('awards', ${aw.id}, 'name', this.value)" placeholder="مثال: Employee of the Year"></div>
+                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('awards', ${aw.id}, 'date')"><span style="direction:ltr; display:inline-block">${escapeHTML(aw.date) || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
+                    <div class="form-group col-span-2"><label class="form-label">التفاصيل أو الإنجاز</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('awards', ${aw.id}, 'items', this.value)" placeholder="Briefly describe why you received this award...">${escapeHTML(aw.items)}</textarea></div>
                 </div>`;
             editList.appendChild(card);
         }
         const item = document.createElement('div'); item.className = "cv-item";
-        item.innerHTML = `<div class="cv-row-1"><span>${aw.name}</span><span class="cv-date">${aw.date}</span></div>${buildBulletPoints(aw.items)}`;
+        item.innerHTML = `<div class="cv-row-1"><span>${escapeHTML(aw.name)}</span><span class="cv-date">${escapeHTML(aw.date)}</span></div>${buildBulletPoints(aw.items)}`;
         viewList.appendChild(item);
     });
 }
@@ -322,17 +346,17 @@ function renderVolunteering(buildEdit = true) {
             const card = document.createElement('div'); card.className = 'item-card';
             card.innerHTML = `<button class="btn-delete" onclick="removeItem('volunteering', ${vol.id})"><i data-lucide="trash-2" style="width:18px;"></i></button>
                 <div class="form-grid">
-                    <div class="form-group"><label class="form-label">المنظمة (Organization)</label><input type="text" style="direction:ltr;" class="form-input" value="${vol.org}" oninput="updateItem('volunteering', ${vol.id}, 'org', this.value)"></div>
-                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('volunteering', ${vol.id}, 'date')"><span style="direction:ltr; display:inline-block">${vol.date || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
-                    <div class="form-group"><label class="form-label">الدور (Role)</label><input type="text" style="direction:ltr;" class="form-input" value="${vol.role}" oninput="updateItem('volunteering', ${vol.id}, 'role', this.value)"></div>
-                    <div class="form-group"><label class="form-label">المدينة</label><input type="text" style="direction:ltr;" class="form-input" value="${vol.location}" oninput="updateItem('volunteering', ${vol.id}, 'location', this.value)"></div>
-                    <div class="form-group col-span-2"><label class="form-label">المهام التطوعية</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('volunteering', ${vol.id}, 'items', this.value)">${vol.items}</textarea></div>
+                    <div class="form-group"><label class="form-label">المنظمة (Organization)</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(vol.org)}" oninput="updateItem('volunteering', ${vol.id}, 'org', this.value)" placeholder="مثال: Red Crescent"></div>
+                    <div class="form-group"><label class="form-label">الفترة (Date)</label><div class="fake-input" onclick="openDatePicker('volunteering', ${vol.id}, 'date')"><span style="direction:ltr; display:inline-block">${escapeHTML(vol.date) || 'اختر الفترة...'}</span><i data-lucide="calendar" style="width:16px;"></i></div></div>
+                    <div class="form-group"><label class="form-label">الدور (Role)</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(vol.role)}" oninput="updateItem('volunteering', ${vol.id}, 'role', this.value)" placeholder="مثال: Volunteer First Aid Responder"></div>
+                    <div class="form-group"><label class="form-label">المدينة</label><input type="text" style="direction:ltr;" class="form-input" value="${escapeHTML(vol.location)}" oninput="updateItem('volunteering', ${vol.id}, 'location', this.value)" placeholder="مثال: Jeddah, KSA"></div>
+                    <div class="form-group col-span-2"><label class="form-label">المهام التطوعية</label><textarea style="direction:ltr;" class="form-input form-textarea" oninput="updateItem('volunteering', ${vol.id}, 'items', this.value)" placeholder="Briefly describe your tasks and contributions...">${escapeHTML(vol.items)}</textarea></div>
                 </div>`;
             editList.appendChild(card);
         }
         const item = document.createElement('div'); item.className = "cv-item";
-        item.innerHTML = `<div class="cv-row-1"><span>${vol.org}</span><span class="cv-date">${vol.date}</span></div>
-            <div class="cv-row-2"><span class="cv-role">${vol.role}</span><span>${vol.location}</span></div>${buildBulletPoints(vol.items)}`;
+        item.innerHTML = `<div class="cv-row-1"><span>${escapeHTML(vol.org)}</span><span class="cv-date">${escapeHTML(vol.date)}</span></div>
+            <div class="cv-row-2"><span class="cv-role">${escapeHTML(vol.role)}</span><span>${escapeHTML(vol.location)}</span></div>${buildBulletPoints(vol.items)}`;
         viewList.appendChild(item);
     });
     // lucide.createIcons(); // Disabled here to avoid icon redraw issues on edit updates
@@ -349,11 +373,12 @@ function saveAndRefresh(buildEdit = true) {
     renderAll(buildEdit);
 }
 
-function updateItem(type, id, key, value) {
+function updateItem(type, id, key, value, buildEdit = false) {
     const item = resumeData[type].find(i => i.id === id);
     if (item) item[key] = value;
     saveProgress();
-    renderAll(false);
+    renderAll(buildEdit);
+    updateProgressiveForms();
 }
 
 function addExperience() { resumeData.experience.push({ id: Date.now(), company: "", date: "", role: "", location: "", items: "" }); saveAndRefresh(); }
@@ -364,6 +389,38 @@ function addAward() { resumeData.awards.push({ id: Date.now(), name: "", date: "
 function addVolunteering() { resumeData.volunteering.push({ id: Date.now(), role: "", date: "", org: "", location: "", items: "" }); saveAndRefresh(); }
 
 function removeItem(type, id) { resumeData[type] = resumeData[type].filter(i => i.id !== id); saveAndRefresh(); }
+
+function updateProgressiveForms() {
+    document.querySelectorAll('.item-card').forEach(card => {
+        const groups = Array.from(card.querySelectorAll('.form-group'));
+        if (groups.length === 0) return;
+
+        // Always show the first field
+        groups[0].style.display = 'flex';
+
+        // Check if the first field has a value
+        const firstInput = groups[0].querySelector('input, textarea');
+        let hasValue = false;
+        if (firstInput) {
+            hasValue = firstInput.value.trim() !== '';
+        }
+
+        // Show the rest only if the first has value
+        for (let i = 1; i < groups.length; i++) {
+            if (hasValue) {
+                if (groups[i].style.display === 'none' || groups[i].style.display === '') {
+                    groups[i].style.display = 'flex';
+                    groups[i].classList.add('prog-reveal');
+                }
+            } else {
+                if (groups[i].style.display !== 'none') {
+                    groups[i].style.display = 'none';
+                    groups[i].classList.remove('prog-reveal');
+                }
+            }
+        }
+    });
+}
 
 function saveProgress() { localStorage.setItem(LOCAL_KEY, JSON.stringify(resumeData)); }
 function loadProgress() {
@@ -434,36 +491,42 @@ function downloadPDF(event) {
 
     if (btn.disabled) return;
     const originalContent = btn.innerHTML;
-    const isMobile = btn.classList.contains('btn-download-modal');
+    const isMobile = window.innerWidth <= 1024;
 
     // Visual feedback
-    btn.innerHTML = isMobile ? '...' : '<i class="fas fa-spinner fa-spin" style="margin-inline-end: 8px;"></i> جاري التحميل...';
+    btn.innerHTML = isMobile ? '<i class="fas fa-spinner fa-spin"></i>' : '<i class="fas fa-spinner fa-spin" style="margin-inline-end: 8px;"></i> جاري التحميل...';
     btn.disabled = true;
 
     // Use a single short timeout to let the UI update text to "Loading...", then freeze main thread to build PDF
     setTimeout(() => {
         try {
-            // Reverting to pdfMake's built-in virtual file system fonts to avoid crash
+            // Using completely local custom font via VFS generated file
             pdfMake.fonts = {
-                Roboto: {
-                    normal: 'Roboto-Regular.ttf',
-                    bold: 'Roboto-Medium.ttf',
-                    italics: 'Roboto-Italic.ttf',
-                    bolditalics: 'Roboto-MediumItalic.ttf'
+                Inter: {
+                    normal: "Inter-Regular.ttf",
+                    bold: "Inter-Bold.ttf",
+                    italics: "Inter-Regular.ttf",
+                    bolditalics: "Inter-Bold.ttf",
+                },
+                InterBlack: {
+                    normal: "Inter-Black.ttf",
+                    bold: "Inter-Black.ttf",
+                    italics: "Inter-Black.ttf",
+                    bolditalics: "Inter-Black.ttf",
                 }
             };
             const d = {
                 pageSize: 'A4',
                 pageMargins: [40, 40, 40, 40],
-                defaultStyle: { font: 'Roboto', color: '#1a1a1a', lineHeight: 1.2 },
+                defaultStyle: { font: 'Inter', color: '#1a1a1a', lineHeight: 1.25 },
                 styles: {
-                    name: { fontSize: 26, bold: true, alignment: 'center', margin: [0, 0, 0, 4], color: '#000000', characterSpacing: 1 },
+                    name: { font: 'InterBlack', fontSize: 30, alignment: 'center', margin: [0, 0, 0, 8], color: '#000000', characterSpacing: 0 },
                     contact: { fontSize: 9, alignment: 'center', color: '#1a1a1a', margin: [0, 0, 0, 10] },
                     contactLink: { fontSize: 9, color: '#1a1a1a' },
-                    sectionTitle: { fontSize: 12, bold: true, margin: [0, 8, 0, 2], color: '#000000', characterSpacing: 1.5 },
+                    sectionTitle: { fontSize: 12, bold: true, margin: [0, 10, 0, 4], color: '#000000', characterSpacing: 0.5 },
                     itemTitle: { fontSize: 10.5, bold: true, color: '#000000' },
                     itemRow: { margin: [0, 0, 0, 1] },
-                    bullets: { fontSize: 9.5, margin: [0, 2, 0, 4] },
+                    bullets: { fontSize: 9.5, lineHeight: 1.25, margin: [0, 2, 0, 6] },
                     skillRow: { fontSize: 10, margin: [0, 0, 0, 2] },
                     subtitle: { fontSize: 9.5, bold: true, italics: true, color: '#333333' }
                 },
@@ -471,7 +534,7 @@ function downloadPDF(event) {
             };
 
             const addSectionLine = () => {
-                d.content.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.2, lineColor: '#cccccc' }], margin: [0, 0, 0, 4] });
+                d.content.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.2, lineColor: '#bbbbbb' }], margin: [0, 0, 0, 6] });
             };
 
             const parseBold = (str) => {
@@ -485,10 +548,17 @@ function downloadPDF(event) {
 
             const buildBullets = (itemsStr) => {
                 if (!itemsStr) return null;
-                const lines = itemsStr.split('\n').filter(i => i.trim());
+                const lines = itemsStr.split('\n').map(s => s.trim()).filter(Boolean);
                 if (!lines.length) return null;
+
                 return {
-                    ul: lines.map(l => ({ text: parseBold(l), margin: [0, 1] })),
+                    stack: lines.map(l => ({
+                        columns: [
+                            { text: "•", width: 10, margin: [0, 0, 4, 0] },
+                            { text: parseBold(l), width: "*" }
+                        ],
+                        margin: [0, 1, 0, 0]
+                    })),
                     style: 'bullets'
                 };
             };
@@ -511,51 +581,99 @@ function downloadPDF(event) {
                     svg: `<svg viewBox="0 0 24 24" ${attrs}>${path}</svg>`,
                     width: 10,
                     height: 10,
-                    margin: [0, 0.5, 3, 0] // Lifted slightly to match text baseline perfectly
+                    margin: [0, 0.5, 2, 0] // Lifted slightly to match text baseline perfectly
                 };
             };
 
-            let contacts = [];
-            if (p.phone) contacts.push({ columns: [getIconPath('phone'), { text: p.phone, width: 'auto', link: 'tel:' + p.phone.replace(/[^0-9+]/g, ''), style: 'contactLink' }], width: 'auto' });
-            if (p.email) contacts.push({ columns: [getIconPath('email'), { text: p.email, width: 'auto', link: 'mailto:' + p.email, style: 'contactLink' }], width: 'auto' });
-            if (p.social) {
-                let text = p.social.replace('https://www.', '').replace('http://www.', '').replace('https://', '').replace('http://', '').replace(/\/$/, "");
-                let scUrl = p.social.startsWith('http') ? p.social : 'https://' + p.social;
-                let iconType = 'social';
-                if (text.includes('linkedin.com')) iconType = 'linkedin';
-                else if (text.includes('github.com')) iconType = 'github';
-                else if (text.includes('twitter.com') || text.includes('x.com')) iconType = 'twitter';
-                else if (text.includes('behance.net')) iconType = 'behance';
-
-                contacts.push({ columns: [getIconPath(iconType), { text: text, width: 'auto', link: scUrl, style: 'contactLink' }], width: 'auto' });
+            let allContactsInfo = [];
+            if (p.phone) {
+                allContactsInfo.push({
+                    text: p.phone.trim().replace(/\s+/g, '\u00A0'),
+                    rawLength: Math.min(p.phone.length, 25),
+                    icon: 'phone',
+                    url: 'tel:' + p.phone.replace(/[^0-9+]/g, '')
+                });
             }
-            if (p.location) contacts.push({ columns: [getIconPath('location'), { text: p.location, width: 'auto' }], width: 'auto' });
+            if (p.email) {
+                let disp = p.email.length > 45 ? p.email.substring(0, 42) + '...' : p.email;
+                allContactsInfo.push({
+                    text: disp.replace(/([@.])/g, '$1\u200B'),
+                    rawLength: disp.length,
+                    icon: 'email',
+                    url: 'mailto:' + p.email
+                });
+            }
+            if (p.social) {
+                let cleanUrl = p.social.replace(/^https?:\/\//, '').replace(/^www\./, '').split('?')[0].replace(/\/$/, "");
+                let scUrl = p.social.startsWith('http') ? p.social : 'https://' + p.social;
+                let disp = cleanUrl.length > 45 ? cleanUrl.substring(0, 42) + '...' : cleanUrl;
+                let iconType = 'social';
+                if (cleanUrl.includes('linkedin.com')) iconType = 'linkedin';
+                else if (cleanUrl.includes('github.com')) iconType = 'github';
+                else if (cleanUrl.includes('twitter.com') || cleanUrl.includes('x.com')) iconType = 'social';
+                else if (cleanUrl.includes('behance.net')) iconType = 'behance';
 
-            if (contacts.length) {
-                let contactItems = [];
-                contacts.forEach((c, idx) => {
-                    contactItems.push(c);
-                    if (idx < contacts.length - 1) {
-                        contactItems.push({ text: "|", color: '#cccccc', margin: [7, 0, 7, 0], width: 'auto' });
+                allContactsInfo.push({
+                    text: disp.replace(/([\/.-_])/g, '$1\u200B'),
+                    rawLength: disp.length,
+                    icon: iconType,
+                    url: scUrl
+                });
+            }
+            if (p.location) {
+                let disp = p.location.length > 30 ? p.location.substring(0, 27) + '...' : p.location;
+                allContactsInfo.push({
+                    text: disp.trim().replace(/\s+/g, '\u00A0'),
+                    rawLength: disp.length,
+                    icon: 'location'
+                });
+            }
+
+            // Dynamic layout grouping logic
+            let rows = [];
+            let currentRow = [];
+            let currentLen = 0;
+
+            allContactsInfo.forEach(c => {
+                let itemLen = c.rawLength + 4;
+                // Increased threshold to 120 points/chars to allow more items to stay on one line
+                if (currentRow.length > 0 && (currentLen + itemLen > 120)) {
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentLen = 0;
+                }
+                currentRow.push(c);
+                currentLen += itemLen;
+            });
+            if (currentRow.length > 0) rows.push(currentRow);
+
+            // Render logically chunked rows beautifully
+            rows.forEach((rowItems, rowIndex) => {
+                let rowCols = [];
+                rowItems.forEach((c, idx) => {
+                    let txtObj = { text: c.text, width: 'auto', style: 'contactLink' };
+                    if (c.url) txtObj.link = c.url;
+
+                    rowCols.push({ columns: [getIconPath(c.icon), txtObj], width: 'auto' });
+
+                    if (idx < rowItems.length - 1) {
+                        rowCols.push({ text: "|", color: '#cccccc', margin: [6, 0, 6, 0], width: 'auto' });
                     }
                 });
 
                 d.content.push({
                     columns: [
                         { width: '*', text: '' },
-                        {
-                            width: 'auto',
-                            columns: contactItems,
-                            columnGap: 0
-                        },
+                        { width: 'auto', columns: rowCols, columnGap: 0 },
                         { width: '*', text: '' }
                     ],
-                    margin: [0, 0, 0, 10]
+                    margin: [0, 0, 0, rowIndex === rows.length - 1 ? 10 : 4]
                 });
-            }
+            });
 
             const buildRow = (left1, right1, left2, right2, desc) => {
-                let block = { unbreakable: true, stack: [] }; // Prevents breaking across pages!
+                const linesCount = (desc || "").split('\n').filter(x => x.trim()).length;
+                let block = { unbreakable: linesCount <= 4, stack: [] }; // Prevents breaking across pages for short items
                 if (left1 || right1) {
                     block.stack.push({
                         columns: [
@@ -576,7 +694,7 @@ function downloadPDF(event) {
                 }
                 const b = buildBullets(desc);
                 if (b) block.stack.push(b);
-                block.stack.push({ text: '', margin: [0, 0, 0, 6] });
+                block.stack.push({ text: '', margin: [0, 0, 0, 4] });
                 d.content.push(block);
             };
 
@@ -616,7 +734,7 @@ function downloadPDF(event) {
             if (resumeData.certifications && resumeData.certifications.length) {
                 d.content.push({ text: 'CERTIFICATIONS', style: 'sectionTitle' });
                 addSectionLine();
-                resumeData.certifications.forEach(ce => buildRow(ce.name, ce.date, ce.issuer ? { text: ce.issuer, italics: true } : null, null, ce.items));
+                resumeData.certifications.forEach(ce => buildRow(ce.name, ce.date, ce.issuer || "", "", ce.items));
             }
 
             if (resumeData.awards && resumeData.awards.length) {
@@ -740,6 +858,6 @@ function saveDateSelection() {
         finalVal += ` -- ${endStr}`;
     }
 
-    updateItem(dpTargetType, dpTargetId, dpTargetKey, finalVal);
+    updateItem(dpTargetType, dpTargetId, dpTargetKey, finalVal, true);
     closeDatePicker();
 }
