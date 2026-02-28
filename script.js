@@ -1,4 +1,10 @@
-const LOCAL_KEY = 'bluder_v7_full_cv';
+const OLD_KEY = 'bluder_v7_full_cv';
+const LOCAL_KEY = 'masari_cv_store';
+
+// Auto-migration for existing users
+if (localStorage.getItem(OLD_KEY) && !localStorage.getItem(LOCAL_KEY)) {
+    localStorage.setItem(LOCAL_KEY, localStorage.getItem(OLD_KEY));
+}
 
 let resumeData = {
     personal: {
