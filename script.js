@@ -721,25 +721,25 @@ function downloadPDF(event) {
             };
             const d = {
                 pageSize: 'A4',
-                pageMargins: [40, 40, 40, 40],
-                defaultStyle: { font: 'Inter', color: '#1a1a1a', lineHeight: 1.25 },
+                pageMargins: [35, 35, 35, 35],
+                defaultStyle: { font: 'Inter', color: '#1a1a1a', lineHeight: 1.2 },
                 styles: {
-                    name: { font: 'InterBlack', fontSize: 30, alignment: 'center', margin: [0, 0, 0, 8], color: '#000000', characterSpacing: 0 },
-                    contact: { fontSize: 9, alignment: 'center', color: '#1a1a1a', margin: [0, 0, 0, 10] },
-                    contactLink: { fontSize: 9, color: '#1a1a1a' },
-                    sectionTitle: { fontSize: 12, bold: true, margin: [0, 10, 0, 4], color: '#000000', characterSpacing: 0.5 },
-                    itemTitle: { fontSize: 10.5, bold: true, color: '#000000' },
-                    itemRow: { margin: [0, 0, 0, 1] },
-                    bullets: { fontSize: 9.5, lineHeight: 1.25, margin: [0, 2, 0, 6] },
-                    skillRow: { fontSize: 10, margin: [0, 0, 0, 2] },
-                    subtitle: { fontSize: 9.5, bold: true, italics: true, color: '#333333' },
-                    projectLink: { fontSize: 9.5, color: '#1a1a1a', decoration: 'underline' }
+                    name: { font: 'InterBlack', fontSize: 26, alignment: 'center', margin: [0, 0, 0, 8], color: '#000000', characterSpacing: 0 },
+                    contact: { fontSize: 8.5, alignment: 'center', color: '#1a1a1a', margin: [0, 0, 0, 6] },
+                    contactLink: { fontSize: 8.5, color: '#1a1a1a' },
+                    sectionTitle: { fontSize: 11.5, bold: true, margin: [0, 6, 0, 2], color: '#000000', characterSpacing: 0.5 },
+                    itemTitle: { fontSize: 10, bold: true, color: '#000000' },
+                    itemRow: { margin: [0, 0, 0, 0.5] },
+                    bullets: { fontSize: 9, lineHeight: 1.2, margin: [0, 1, 0, 4] },
+                    skillRow: { fontSize: 9.5, margin: [0, 0, 0, 1] },
+                    subtitle: { fontSize: 9, bold: true, italics: true, color: '#333333' },
+                    projectLink: { fontSize: 9, color: '#1a1a1a', decoration: 'underline' }
                 },
                 content: []
             };
 
             const addSectionLine = () => {
-                d.content.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1.2, lineColor: '#bbbbbb' }], margin: [0, 0, 0, 6] });
+                d.content.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 525, y2: 0, lineWidth: 1.2, lineColor: '#bbbbbb' }], margin: [0, 0, 0, 4] });
             };
 
             const parseBold = (str) => {
@@ -770,7 +770,7 @@ function downloadPDF(event) {
 
             const p = resumeData.personal;
             if (p.name) d.content.push({ text: p.name, style: 'name' });
-            if (p.highlights) d.content.push({ text: p.highlights, fontSize: 10.5, bold: true, alignment: 'center', margin: [0, -12, 0, 10], color: '#444444' });
+            if (p.highlights) d.content.push({ text: p.highlights, fontSize: 9.5, bold: true, alignment: 'center', margin: [0, -4, 0, 10], color: '#444444' });
 
             const getIconPath = (type) => {
                 const attrs = 'fill="#444444" stroke="none"';
@@ -804,7 +804,7 @@ function downloadPDF(event) {
             if (p.email) {
                 let disp = p.email.length > 45 ? p.email.substring(0, 42) + '...' : p.email;
                 allContactsInfo.push({
-                    text: disp.replace(/([@.])/g, '$1\u200B'),
+                    text: disp,
                     rawLength: disp.length,
                     icon: 'email',
                     url: 'mailto:' + p.email
@@ -821,7 +821,7 @@ function downloadPDF(event) {
                 else if (cleanUrl.includes('behance.net')) iconType = 'behance';
 
                 allContactsInfo.push({
-                    text: disp.replace(/([\/.-_])/g, '$1\u200B'),
+                    text: disp,
                     rawLength: disp.length,
                     icon: iconType,
                     url: scUrl
@@ -876,7 +876,7 @@ function downloadPDF(event) {
                         { width: 'auto', columns: rowCols, columnGap: 0 },
                         { width: '*', text: '' }
                     ],
-                    margin: [0, 0, 0, rowIndex === rows.length - 1 ? 10 : 4]
+                    margin: [0, 0, 0, rowIndex === rows.length - 1 ? 12 : 6]
                 });
             });
 
@@ -917,14 +917,14 @@ function downloadPDF(event) {
                 }
                 const b = buildBullets(desc);
                 if (b) block.stack.push(b);
-                block.stack.push({ text: '', margin: [0, 0, 0, 4] });
+                block.stack.push({ text: '', margin: [0, 0, 0, 2] });
                 d.content.push(block);
             };
 
             if (resumeData.summary && resumeData.summary.trim()) {
                 d.content.push({ text: 'SUMMARY', style: 'sectionTitle' });
                 addSectionLine();
-                d.content.push({ text: resumeData.summary.trim(), fontSize: 9.5, lineHeight: 1.4, margin: [0, 0, 0, 8], color: '#333333' });
+                d.content.push({ text: resumeData.summary.trim(), fontSize: 9.5, lineHeight: 1.3, margin: [0, 0, 0, 6], color: '#333333' });
             }
 
             if (resumeData.skills && resumeData.skills.length) {
@@ -939,7 +939,7 @@ function downloadPDF(event) {
                         style: 'skillRow'
                     });
                 });
-                skBlock.stack.push({ text: '', margin: [0, 0, 0, 8] });
+                skBlock.stack.push({ text: '', margin: [0, 0, 0, 4] });
                 d.content.push(skBlock);
             }
 
